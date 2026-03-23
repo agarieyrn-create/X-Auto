@@ -92,15 +92,20 @@ def cmd_check(args):
     if Path(config.PROFILE_PATH).exists():
         print(f"   ✅ プロファイルが見つかりました: {config.PROFILE_PATH}")
     else:
-        print(f"   ⚠️  プロファイルがありません。'python main.py analyze <csv>' で生成してください。")
+        print(f"   ⚠️  プロファイルがありません。")
+        print(f"      → まず X アナリティクスから CSV をダウンロードして:")
+        print(f"        python main.py analyze ./analytics.csv")
 
     # キューチェック
     print("4️⃣  投稿キューを確認中...")
     from core.post_queue import PostQueue
     queue = PostQueue()
     summary = queue.get_posts_summary()
-    print(f"   📊 キュー: pending={summary.get('pending',0)} "
+    pending = summary.get("pending", 0)
+    print(f"   📊 キュー: pending={pending} "
           f"posted={summary.get('posted',0)} failed={summary.get('failed',0)}")
+    if pending == 0:
+        print(f"      → 投稿がありません。'python main.py generate' で生成してください。")
 
     print("\n✅ チェック完了\n")
 

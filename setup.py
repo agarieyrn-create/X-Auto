@@ -99,8 +99,11 @@ def _write_env(env_path: Path):
     x_access_token_secret = getpass.getpass("  X Access Token Secret : ")
     anthropic_api_key     = getpass.getpass("  Anthropic API Key     : ")
 
-    dry_run = input("\n  DRY_RUN モードにしますか？（実際には投稿されません）[y/N]: ").strip().lower()
-    dry_run_val = "true" if dry_run == "y" else "false"
+    # デフォルトを DRY_RUN=true にして安全側から始める
+    dry_run = input(
+        "\n  本番投稿を有効にしますか？（いいえ の場合は DRY_RUN モードで動作します）[y/N]: "
+    ).strip().lower()
+    dry_run_val = "false" if dry_run == "y" else "true"
 
     env_content = f"""# X (Twitter) API
 X_API_KEY={x_api_key}

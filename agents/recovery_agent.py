@@ -91,12 +91,10 @@ class RecoveryAgent:
     # ── 内部メソッド ──────────────────────────────────────
 
     def _is_online(self) -> bool:
-        """ネットワーク接続を確認する。"""
+        """ネットワーク接続を確認する（グローバルタイムアウトを汚染しない）。"""
         try:
-            socket.setdefaulttimeout(_CHECK_TIMEOUT)
-            socket.socket(socket.AF_INET, socket.SOCK_STREAM).connect(
-                (_CHECK_HOST, _CHECK_PORT)
-            )
+            with socket.create_connection((_CHECK_HOST, _CHECK_PORT), timeout=_CHECK_TIMEOUT):
+                pass
             return True
         except (socket.error, OSError):
             return False
@@ -128,7 +126,7 @@ class RecoveryAgent:
         logger.info("%d件の未投稿をリカバリします", len(missed))
         results = []
         for post in missed:
-            result = self._scheduler._do_post(post)
+            result = self._scheduler.post_record(post)
             results.append(result)
             time.sleep(2)  # レート制限対応
 

@@ -56,18 +56,24 @@ class PostSchedulerAgent:
         Returns:
             {"ok": bool, "tweet_id": str, "text": str, "error": str}
         """
-        if post_id:
-            # IDを指定してキューから取得（簡易実装: 全件取得してフィルタ）
-            all_pending = self._queue.get_all_pending()
-            target = next((p for p in all_pending if p["id"] == post_id), None)
-        else:
-            target = self._queue.get_next_pending()
+        target = (
+            self._queue.get_post_by_id(post_id) if post_id
+            else self._queue.get_next_pending()
+        )
 
         if not target:
-            logger.warning("投稿可能なキューがありません")
-            return {"ok": False, "tweet_id": "", "text": "", "error": "キューが空です"}
+            msg = "キューが空です。'python main.py generate' で投稿を生成してください。"
+            logger.warning(msg)
+            return {"ok": False, "tweet_id": "", "text": "", "error": msg}
 
-        return self._do_post(target)
+        return self._post_record(target)
+
+    def post_record(self, post: dict) -> dict:
+        """
+        キューのレコード dict を受け取り即時投稿する（RecoveryAgent などから利用）。
+        post_one() との違いは「キュー検索をしない」点。
+        """
+        return self._post_record(post)
 
     def run_once(self) -> list[dict]:
         """
@@ -81,7 +87,7 @@ class PostSchedulerAgent:
         logger.info("%d件の due 投稿を処理します", len(due))
         results = []
         for post in due:
-            result = self._do_post(post)
+            result = self._post_record(post)
             results.append(result)
             if result["ok"]:
                 # 連続投稿のレート制限を避けるため少し待つ
@@ -135,7 +141,7 @@ class PostSchedulerAgent:
 
     # ── 内部メソッド ──────────────────────────────────────
 
-    def _do_post(self, post: dict) -> dict:
+    def _post_record(self, post: dict) -> dict:
         """1件の投稿を X に送り、キューを更新する。"""
         text    = post["text"]
         post_id = post["id"]
@@ -150,22 +156,17 @@ class PostSchedulerAgent:
         result = self._twitter.post_tweet(text)
 
         if result["ok"]:
-            self._queue.mark_posted(
-                post_id=post_id,
-                tweet_id=result["tweet_id"],
-            )
-            print(f"✅ 投稿成功 [{post.get('category', '')}] {text[:60]}…")
+            self._queue.mark_posted(post_id=post_id, tweet_id=result["tweet_id"])
+            logger.info("投稿成功 [%s] tweet_id=%s %s…",
+                        post.get("category", ""), result["tweet_id"], text[:60])
         else:
-            self._queue.mark_failed(
-                post_id=post_id,
-                error_msg=result["error"],
-            )
-            print(f"❌ 投稿失敗: {result['error']}")
+            self._queue.mark_failed(post_id=post_id, error_msg=result["error"])
+            logger.error("投稿失敗 ID=%d: %s", post_id, result["error"])
 
         return {
-            "ok":      result["ok"],
+            "ok":       result["ok"],
             "tweet_id": result.get("tweet_id", ""),
-            "text":    text,
-            "error":   result.get("error", ""),
-            "post_id": post_id,
+            "text":     text,
+            "error":    result.get("error", ""),
+            "post_id":  post_id,
         }

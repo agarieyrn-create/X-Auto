@@ -155,6 +155,14 @@ class PostQueue:
 
         return [dict(r) for r in rows]
 
+    def get_post_by_id(self, post_id: int) -> Optional[dict]:
+        """IDで投稿を1件取得する（O(1) DB クエリ）。"""
+        with self._conn() as conn:
+            row = conn.execute(
+                "SELECT * FROM posts WHERE id=? AND status='pending'", (post_id,)
+            ).fetchone()
+        return dict(row) if row else None
+
     def get_next_pending(self) -> Optional[dict]:
         """スケジュールなしも含む次の pending 投稿を返す（テスト投稿用）。"""
         with self._conn() as conn:

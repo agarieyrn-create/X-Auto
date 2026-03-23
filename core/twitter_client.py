@@ -22,13 +22,7 @@ class TwitterClient:
     """X API v2 ラッパー。投稿に必要な操作だけを提供します。"""
 
     def __init__(self):
-        auth = tweepy.OAuth1UserHandler(
-            consumer_key=config.X_API_KEY,
-            consumer_secret=config.X_API_KEY_SECRET,
-            access_token=config.X_ACCESS_TOKEN,
-            access_token_secret=config.X_ACCESS_TOKEN_SECRET,
-        )
-        self._api = tweepy.API(auth, wait_on_rate_limit=True)
+        # API v2 のみ使用（v1.1 の tweepy.API は不要）
         self._client = tweepy.Client(
             consumer_key=config.X_API_KEY,
             consumer_secret=config.X_API_KEY_SECRET,

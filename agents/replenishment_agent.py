@@ -58,6 +58,7 @@ class ReplenishmentAgent:
 
         # 頻繁すぎるチェックを避ける（最低1時間間隔）
         if (now - self._last_check).total_seconds() < 3600:
+            logger.debug("補充チェックをスロットル中 (前回: %s)", self._last_check.strftime("%H:%M"))
             return False
         self._last_check = now
 
@@ -121,9 +122,12 @@ class ReplenishmentAgent:
                 hour=0, minute=0, second=0, microsecond=0
             )
 
-        last_scheduled = max(
-            p["scheduled_at"] for p in all_pending if p.get("scheduled_at")
-        )
+        scheduled_dates = [p["scheduled_at"] for p in all_pending if p.get("scheduled_at")]
+        if not scheduled_dates:
+            return (datetime.now() + timedelta(days=1)).replace(
+                hour=0, minute=0, second=0, microsecond=0
+            )
+        last_scheduled = max(scheduled_dates)
         last_dt = datetime.strptime(last_scheduled, "%Y-%m-%d %H:%M:%S")
         return (last_dt + timedelta(days=1)).replace(
             hour=0, minute=0, second=0, microsecond=0

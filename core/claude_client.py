@@ -60,6 +60,8 @@ class ClaudeClient:
         for attempt in range(1, retry + 1):
             try:
                 response = self._client.messages.create(**kwargs)
+                if not response.content:
+                    raise ValueError("Claude からの応答が空でした（content が空リスト）")
                 text = response.content[0].text
                 logger.debug("Claude応答 (%d文字): %s…", len(text), text[:80])
                 return text
