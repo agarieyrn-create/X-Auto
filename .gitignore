@@ -1,0 +1,24 @@
+# APIキー・シークレット
+.env
+
+# DB・ログ
+data/
+logs/
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+.venv/
+venv/
+*.egg-info/
+dist/
+build/
+
+# テスト
+.pytest_cache/
+.coverage
+htmlcov/
+
+# macOS
+.DS_Store
